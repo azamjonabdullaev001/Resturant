@@ -9,10 +9,10 @@ const STATUS_LABELS = {
 }
 
 const STATUS_COLORS = {
-  pending: '#f59e0b',
-  preparing: '#3b82f6',
-  ready: '#22c55e',
-  served: '#8b5cf6',
+  pending: '#f1c40f',
+  preparing: '#3498db',
+  ready: '#2ecc71',
+  served: '#9b59b6',
 }
 
 export default function WaiterDashboard() {

@@ -11,9 +11,9 @@ const PANEL_NAMES = {
 }
 
 const STATUS_FLOW = {
-  pending: { next: 'preparing', label: '👨‍🍳 Начать готовить', color: '#f59e0b' },
-  preparing: { next: 'ready', label: '✅ Готово', color: '#3b82f6' },
-  ready: { next: null, label: 'Готов к подаче', color: '#22c55e' },
+  pending: { next: 'preparing', label: '👨‍🍳 Начать готовить', color: '#f1c40f' },
+  preparing: { next: 'ready', label: '✅ Готово', color: '#3498db' },
+  ready: { next: null, label: 'Готов к подаче', color: '#2ecc71' },
 }
 
 export default function KitchenOrders() {

@@ -67,8 +67,8 @@ export default function Layout() {
             <span className="user-name">{user?.name}</span>
             <span className="user-phone">{user?.phone}</span>
           </div>
-          <button onClick={handleLogout} className="btn btn-outline btn-sm">
-            Выйти
+          <button onClick={handleLogout} className="btn btn-outline btn-sm" style={{ width: '100%' }}>
+            🚪 Выйти
           </button>
         </div>
       </aside>

@@ -47,7 +47,8 @@ export default function Login() {
     <div className="login-page">
       <div className="login-card">
         <div className="login-header">
-          <h1>🍽️ Ресторан</h1>
+          <div style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>🍽️</div>
+          <h1>Ресторан</h1>
           <p>Система управления</p>
         </div>
         <form onSubmit={handleSubmit}>
@@ -73,8 +74,9 @@ export default function Login() {
               maxLength={8}
             />
           </div>
-          <button type="submit" className="btn btn-primary btn-full" disabled={loading}>
-            {loading ? 'Вход...' : 'Войти'}
+          <button type="submit" className="btn btn-primary btn-full" disabled={loading}
+            style={{ padding: '0.8rem', fontSize: '0.95rem', marginTop: '0.5rem' }}>
+            {loading ? 'Вход...' : 'Войти в систему'}
           </button>
         </form>
       </div>
