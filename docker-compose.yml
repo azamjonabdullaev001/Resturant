@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: restaurant_db
+    environment:
+      POSTGRES_DB: restaurant
+      POSTGRES_USER: restaurant_user
+      POSTGRES_PASSWORD: restaurant_pass_2024
+    ports:
+      - "5151:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U restaurant_user -d restaurant"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: restaurant_api
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: restaurant_user
+      DB_PASSWORD: restaurant_pass_2024
+      DB_NAME: restaurant
+      JWT_SECRET: restaurant_jwt_secret_key_2024_secure
+      PORT: 8080
+      UPLOAD_DIR: /app/uploads
+    ports:
+      - "8085:8080"
+    volumes:
+      - uploads_data:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: restaurant_frontend
+    ports:
+      - "3005:80"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
+  uploads_data:

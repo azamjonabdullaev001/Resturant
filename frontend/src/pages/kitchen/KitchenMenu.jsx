@@ -1,0 +1,172 @@
+import { useState, useEffect, useRef } from 'react'
+import { getMenu, getCategories, createMenuItem, updateMenuItem, deleteMenuItem, uploadImage } from '../../api'
+import { useAuth } from '../../AuthContext'
+import toast from 'react-hot-toast'
+
+const API_URL = import.meta.env.VITE_API_URL || ''
+
+export default function KitchenMenu() {
+  const { user } = useAuth()
+  const panelType = user?.role
+  const [items, setItems] = useState([])
+  const [categories, setCategories] = useState([])
+  const [showForm, setShowForm] = useState(false)
+  const [editId, setEditId] = useState(null)
+  const [form, setForm] = useState({ category_id: '', name: '', description: '', price: '', quantity: '', image_url: '' })
+  const fileRef = useRef(null)
+
+  const load = () => {
+    getMenu({ panel_type: panelType }).then((res) => setItems(res.data))
+    getCategories(panelType).then((res) => setCategories(res.data))
+  }
+  useEffect(() => { load() }, [panelType])
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    try {
+      const res = await uploadImage(file)
+      setForm({ ...form, image_url: res.data.url })
+      toast.success('Фото загружено')
+    } catch { toast.error('Ошибка загрузки') }
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    try {
+      const data = {
+        ...form,
+        category_id: parseInt(form.category_id),
+        price: parseFloat(form.price),
+        quantity: parseInt(form.quantity) || 0,
+      }
+      if (editId) {
+        await updateMenuItem(editId, data)
+        toast.success('Обновлено')
+      } else {
+        await createMenuItem(data)
+        toast.success('Добавлено')
+      }
+      resetForm()
+      load()
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Ошибка')
+    }
+  }
+
+  const resetForm = () => {
+    setShowForm(false)
+    setEditId(null)
+    setForm({ category_id: '', name: '', description: '', price: '', quantity: '', image_url: '' })
+  }
+
+  const handleEdit = (item) => {
+    setEditId(item.id)
+    setForm({
+      category_id: item.category_id,
+      name: item.name,
+      description: item.description,
+      price: item.price,
+      quantity: item.quantity,
+      image_url: item.image_url,
+    })
+    setShowForm(true)
+  }
+
+  const handleDelete = async (id) => {
+    if (!confirm('Удалить?')) return
+    try {
+      await deleteMenuItem(id)
+      toast.success('Удалено')
+      load()
+    } catch (err) { toast.error('Ошибка') }
+  }
+
+  const handleQtyChange = async (item, delta) => {
+    const newQty = Math.max(0, item.quantity + delta)
+    await updateMenuItem(item.id, { quantity: newQty })
+    load()
+  }
+
+  const formatPrice = (p) => new Intl.NumberFormat('uz-UZ').format(p) + ' сум'
+
+  return (
+    <div className="page">
+      <div className="page-header">
+        <h1 className="page-title">Мои блюда</h1>
+        <button className="btn btn-primary" onClick={() => showForm ? resetForm() : setShowForm(true)}>
+          {showForm ? 'Отмена' : '+ Добавить'}
+        </button>
+      </div>
+
+      {showForm && (
+        <form onSubmit={handleSubmit} className="card form-card">
+          <div className="form-row">
+            <div className="form-group">
+              <label>Категория</label>
+              <select value={form.category_id} onChange={(e) => setForm({ ...form, category_id: e.target.value })} required>
+                <option value="">Выберите...</option>
+                {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </div>
+            <div className="form-group">
+              <label>Название</label>
+              <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+            </div>
+          </div>
+          <div className="form-row">
+            <div className="form-group">
+              <label>Цена (сум)</label>
+              <input type="number" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} min="0" step="100" required />
+            </div>
+            <div className="form-group">
+              <label>Количество</label>
+              <input type="number" value={form.quantity} onChange={(e) => setForm({ ...form, quantity: e.target.value })} min="0" />
+            </div>
+          </div>
+          <div className="form-group">
+            <label>Описание</label>
+            <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={2} />
+          </div>
+          <div className="form-group">
+            <label>Фото</label>
+            <input type="file" ref={fileRef} accept="image/*" onChange={handleImageUpload} />
+            {form.image_url && <img src={API_URL + form.image_url} alt="" className="preview-img" />}
+          </div>
+          <button type="submit" className="btn btn-primary">{editId ? 'Сохранить' : 'Добавить'}</button>
+        </form>
+      )}
+
+      <div className="menu-grid">
+        {items.map((item) => (
+          <div key={item.id} className={`menu-card ${!item.available ? 'unavailable' : ''}`}>
+            {item.image_url && (
+              <div className="menu-card-img">
+                <img src={API_URL + item.image_url} alt={item.name} />
+              </div>
+            )}
+            <div className="menu-card-body">
+              <h3>{item.name}</h3>
+              <span className="badge">{item.category_name}</span>
+              {item.description && <p className="menu-desc">{item.description}</p>}
+              <div className="menu-meta">
+                <span className="menu-price">{formatPrice(item.price)}</span>
+              </div>
+              <div className="qty-controls">
+                <button className="qty-btn" onClick={() => handleQtyChange(item, -1)}>−</button>
+                <span className="qty-value">{item.quantity}</span>
+                <button className="qty-btn" onClick={() => handleQtyChange(item, 1)}>+</button>
+              </div>
+              <div className="btn-group" style={{ marginTop: '0.5rem' }}>
+                <button className="btn btn-sm btn-outline" onClick={() => handleEdit(item)}>✏️</button>
+                <button className="btn btn-sm btn-danger" onClick={() => handleDelete(item.id)}>🗑️</button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {items.length === 0 && <p className="empty-state">Блюда не добавлены</p>}
+    </div>
+  )
+}
